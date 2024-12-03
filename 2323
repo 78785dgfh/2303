@@ -1,0 +1,98 @@
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+
+public class ChatApp {
+
+    public static class User {
+        private String username;
+        private Role role;
+
+        public enum Role {
+            USER, ADMIN
+        }
+
+        public User(String username, Role role) {
+            this.username = username;
+            this.role = role;
+        }
+
+        public String getUsername() {
+            return username;
+        }
+
+        public Role getRole() {
+            return role;
+        }
+    }
+
+    public static class ChatServer {
+        private Map<String, User> users = new HashMap<>();
+
+        public void addUser(User user) {
+            users.put(user.getUsername(), user);
+        }
+
+        public void kickUser(String adminUsername, String targetUsername) {
+            User admin = users.get(adminUsername);
+            User target = users.get(targetUsername);
+
+            if (admin != null && admin.getRole() == User.Role.ADMIN) {
+                if (target != null) {
+                    users.remove(targetUsername);
+                    System.out.println(targetUsername + " был отключен от чата.");
+                } else {
+                    System.out.println("Пользователь не найден.");
+                }
+            } else {
+                System.out.println("Недостаточно прав для выполнения команды.");
+            }
+        }
+    }
+
+    public static class ChatClient {
+        private ChatServer server;
+        private String username;
+
+        public ChatClient(ChatServer server, String username) {
+            this.server = server;
+            this.username = username;
+        }
+
+        public void start() {
+            Scanner scanner = new Scanner(System.in);
+            String command;
+
+            System.out.println("Чат запущен. Введите команду:");
+
+            while (true) {
+                command = scanner.nextLine();
+
+                if (command.startsWith("kick")) {
+                    String targetUsername = command.split(" ")[1];
+                    server.kickUser(username, targetUsername);
+                } else {
+                    System.out.println(username + ": " + command);
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        ChatServer server = new ChatServer();
+
+        User user1 = new User("Alice", User.Role.USER);
+        User user2 = new User("Bob", User.Role.USER);
+        User admin = new User("Admin", User.Role.ADMIN);
+
+        server.addUser(user1);
+        server.addUser(user2);
+        server.addUser(admin);
+
+        ChatClient client1 = new ChatClient(server, "Alice");
+        ChatClient client2 = new ChatClient(server, "Bob");
+        ChatClient adminClient = new ChatClient(server, "Admin");
+
+        adminClient.start();
+    }
+}
